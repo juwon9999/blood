@@ -54,8 +54,9 @@
       </div>
     </div>
 
-    <label class="block mb-2">계좌번호</label>
+    <label class="block mb-2">본인 계좌번호</label>
     <input id="betAccount" type="text" class="w-full p-2 rounded-lg text-black mb-2">
+    <p class="text-yellow-400 text-sm mb-2">배팅 금액은 79753877 이 계좌에 입금해 주십시오.</p>
 
     <div class="mb-4">
       <label class="block mb-2">라운드 선택:</label>
@@ -105,207 +106,244 @@
 </main>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, deleteDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, deleteDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyADD5SDGP3qgD1w92EsVJzRQL6jL2-4Hhs",
-    authDomain: "bloodlien-f24bc.firebaseapp.com",
-    projectId: "bloodlien-f24bc",
-    storageBucket: "bloodlien-f24bc.firebasestorage.app",
-    messagingSenderId: "521684113454",
-    appId: "1:521684113454:web:471349dc2374e4903127bf",
-    measurementId: "G-S0KDBLK5DN"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyADD5SDGP3qgD1w92EsVJzRQL6jL2-4Hhs",
+  authDomain: "bloodlien-f24bc.firebaseapp.com",
+  projectId: "bloodlien-f24bc",
+  storageBucket: "bloodlien-f24bc.firebasestorage.app",
+  messagingSenderId: "521684113454",
+  appId: "1:521684113454:web:471349dc2374e4903127bf",
+  measurementId: "G-S0KDBLK5DN"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const MAX_BET=1000000000;
 
-  const MAX_BET=1000000000;
+// DOM
+const loginPage=document.getElementById('loginPage');
+const loginForm=document.getElementById('loginForm');
+const ageModal=document.getElementById('ageModal');
+const mainApp=document.getElementById('mainApp');
+const betResultPage=document.getElementById('betResultPage');
+const loginError=document.getElementById('loginError');
+const oddsA=document.getElementById('oddsA');
+const oddsB=document.getElementById('oddsB');
+const btnBetA=document.getElementById('btnBetA');
+const btnBetB=document.getElementById('btnBetB');
+const selectedFighterEl=document.getElementById('selectedFighter');
+const selectedOddsEl=document.getElementById('selectedOdds');
+const selectedRoundEl=document.getElementById('selectedRound');
+const payoutEl=document.getElementById('payout');
+const betAmountEl=document.getElementById('betAmount');
+const placeBet=document.getElementById('placeBet');
+const logoutBtn=document.getElementById('logoutBtn');
+const roundSelect=document.getElementById('roundSelect');
+const backToMain=document.getElementById('backToMain');
+const betAccountEl=document.getElementById('betAccount');
+const fighterAName = document.querySelectorAll('.text-center p.font-bold')[0];
+const fighterBName = document.querySelectorAll('.text-center p.font-bold')[1];
+const fighterAImg = document.querySelectorAll('.text-center img')[0];
+const fighterBImg = document.querySelectorAll('.text-center img')[1];
+const matchTitle = document.querySelector('main h2 + p');
 
-  // DOM
-  const loginPage=document.getElementById('loginPage');
-  const loginForm=document.getElementById('loginForm');
-  const ageModal=document.getElementById('ageModal');
-  const mainApp=document.getElementById('mainApp');
-  const betResultPage=document.getElementById('betResultPage');
-  const loginError=document.getElementById('loginError');
-  const oddsA=document.getElementById('oddsA');
-  const oddsB=document.getElementById('oddsB');
-  const btnBetA=document.getElementById('btnBetA');
-  const btnBetB=document.getElementById('btnBetB');
-  const selectedFighterEl=document.getElementById('selectedFighter');
-  const selectedOddsEl=document.getElementById('selectedOdds');
-  const selectedRoundEl=document.getElementById('selectedRound');
-  const payoutEl=document.getElementById('payout');
-  const betAmountEl=document.getElementById('betAmount');
-  const placeBet=document.getElementById('placeBet');
-  const logoutBtn=document.getElementById('logoutBtn');
-  const roundSelect=document.getElementById('roundSelect');
-  const backToMain=document.getElementById('backToMain');
-  const betAccountEl=document.getElementById('betAccount');
+// 라운드별 선수
+const fightersByRound = {
+  1: { A: { name: "민돌", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "신짱", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  2: { A: { name: "남정", odds: 2.20, img: "https://picsum.photos/100/100?random=3" },
+       B: { name: "신유진", odds: 1.95, img: "https://picsum.photos/100/100?random=4" } },
+  3: { A: { name: "마틴", odds: 2.20, img: "https://picsum.photos/100/100?random=5" },
+       B: { name: "찰리", odds: 1.95, img: "https://picsum.photos/100/100?random=6" } },
+  4: { A: { name: "나몽", odds: 2.20, img: "https://picsum.photos/100/100?random=7" },
+       B: { name: "신짱구", odds: 1.95, img: "https://picsum.photos/100/100?random=8" } },
+  5: { A: { name: "나흙", odds: 2.20, img: "https://picsum.photos/100/100?random=9" },
+       B: { name: "악마", odds: 1.95, img: "https://picsum.photos/100/100?random=10" } },
+};
 
-  // 로그인
-  loginForm.addEventListener('submit', e=>{
-    e.preventDefault();
-    const name=document.getElementById('username').value.trim();
-    const id=document.getElementById('userid').value.trim();
-    if(name==="관리자" && id==="1"){ showAdminPage(); return; }
-    if(name && id){
-      localStorage.setItem('ufo_demo_user', JSON.stringify({name,id}));
-      loginPage.classList.add('hidden');
-      ageModal.classList.remove('hidden');
-      loginError.classList.add('hidden');
-    } else {
-      loginError.textContent='이름, 고유번호를 모두 입력하세요.';
-      loginError.classList.remove('hidden');
-    }
-  });
+// 로그인
+loginForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const name=document.getElementById('username').value.trim();
+  const id=document.getElementById('userid').value.trim();
+  if(name==="관리자" && id==="1"){ showAdminPage(); return; }
+  if(name && id){
+    localStorage.setItem('ufo_demo_user', JSON.stringify({name,id}));
+    loginPage.classList.add('hidden');
+    ageModal.classList.remove('hidden');
+    loginError.classList.add('hidden');
+  } else {
+    loginError.textContent='이름, 고유번호를 모두 입력하세요.';
+    loginError.classList.remove('hidden');
+  }
+});
 
-  document.getElementById('confirmAge').addEventListener('click', ()=>{
-    localStorage.setItem('ufo_demo_age_confirmed','true');
-    ageModal.classList.add('hidden'); 
-    mainApp.classList.remove('hidden');
-  });
-  document.getElementById('exitSite').addEventListener('click', ()=>{window.location.href='about:blank';});
-  logoutBtn.addEventListener('click', ()=>{ 
-    localStorage.removeItem('ufo_demo_user'); 
-    localStorage.removeItem('ufo_demo_age_confirmed'); 
-    location.reload(); 
-  });
+document.getElementById('confirmAge').addEventListener('click', ()=>{
+  localStorage.setItem('ufo_demo_age_confirmed','true');
+  ageModal.classList.add('hidden'); 
+  mainApp.classList.remove('hidden');
+});
+document.getElementById('exitSite').addEventListener('click', ()=>{window.location.href='about:blank';});
+logoutBtn.addEventListener('click', ()=>{ 
+  localStorage.removeItem('ufo_demo_user'); 
+  localStorage.removeItem('ufo_demo_age_confirmed'); 
+  location.reload(); 
+});
 
-  // 선수 선택
-  function selectBet(fighter, odds){
-    selectedFighterEl.textContent=fighter;
-    selectedOddsEl.textContent=parseFloat(odds).toFixed(2);
-    selectedRoundEl.textContent=roundSelect.value;
+// 선수 선택
+function selectBet(fighter, odds){
+  selectedFighterEl.textContent=fighter;
+  selectedOddsEl.textContent=parseFloat(odds).toFixed(2);
+  selectedRoundEl.textContent=roundSelect.value;
+  calculatePayout();
+}
+
+// 배팅 버튼
+btnBetA.addEventListener('click', ()=>selectBet(fightersByRound[roundSelect.value].A.name, oddsA.textContent));
+btnBetB.addEventListener('click', ()=>selectBet(fightersByRound[roundSelect.value].B.name, oddsB.textContent));
+
+// 금액 버튼
+document.querySelectorAll('.betQuick').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    let value=parseInt(btn.dataset.value);
+    let current=parseInt(betAmountEl.value||0);
+    if(current+value>MAX_BET) current=MAX_BET;
+    else current+=value;
+    betAmountEl.value=current;
     calculatePayout();
-  }
-  btnBetA.addEventListener('click', ()=>selectBet('선수 A', oddsA.textContent));
-  btnBetB.addEventListener('click', ()=>selectBet('선수 B', oddsB.textContent));
+  });
+});
 
-  // 금액 버튼
-  document.querySelectorAll('.betQuick').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      let value=parseInt(btn.dataset.value);
-      let current=parseInt(betAmountEl.value||0);
-      if(current+value>MAX_BET) current=MAX_BET;
-      else current+=value;
-      betAmountEl.value=current;
-      calculatePayout();
+function calculatePayout(){
+  const amount=parseFloat(betAmountEl.value||0);
+  const odds=parseFloat(selectedOddsEl.textContent||0);
+  payoutEl.textContent=(!isNaN(amount)&&amount>0&&!isNaN(odds)&&odds>0)?(amount*odds).toLocaleString():'0';
+}
+
+// 라운드 변경 시 선수 갱신
+roundSelect.addEventListener('change', ()=>{
+  const round = roundSelect.value;
+  const fighters = fightersByRound[round];
+  fighterAName.textContent = fighters.A.name;
+  fighterBName.textContent = fighters.B.name;
+  fighterAImg.src = fighters.A.img;
+  fighterBImg.src = fighters.B.img;
+  oddsA.textContent = fighters.A.odds.toFixed(2);
+  oddsB.textContent = fighters.B.odds.toFixed(2);
+  matchTitle.textContent = `${fighters.A.name} vs ${fighters.B.name}`;
+  selectedFighterEl.textContent = "없음";
+  selectedOddsEl.textContent = "-";
+  selectedRoundEl.textContent = "-";
+  payoutEl.textContent = "0";
+});
+
+// 배팅 실행
+placeBet.addEventListener('click', async ()=>{
+  const saved=localStorage.getItem('ufo_demo_user');
+  if(!saved){ alert('먼저 로그인하세요.'); return; }
+  const user=JSON.parse(saved);
+  const account=betAccountEl.value.trim();
+  if(!account){ alert('계좌번호를 입력하세요.'); return; }
+  const fighter=selectedFighterEl.textContent;
+  const amount=parseFloat(betAmountEl.value||0);
+  const odds=parseFloat(selectedOddsEl.textContent||0);
+  const round=parseInt(roundSelect.value);
+  if(!fighter||fighter==='없음'||amount<=0||odds<=0){ alert('선수 선택 및 금액 확인'); return; }
+  if(amount>MAX_BET){ alert('최대 배팅 금액은 10억입니다.'); return; }
+
+  const rawPayout=amount*odds;
+  const fee=Math.floor(rawPayout*0.2);
+  const finalPayout=rawPayout-fee;
+
+  await addDoc(collection(db,"bets"),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
+  await setDoc(doc(db,"placeBet",user.id),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
+
+  document.getElementById('resultFighter').textContent=fighter;
+  document.getElementById('resultRound').textContent=round;
+  document.getElementById('resultBetAmount').textContent=amount.toLocaleString();
+  document.getElementById('resultOdds').textContent=odds.toFixed(2);
+  document.getElementById('resultFee').textContent=fee.toLocaleString();
+  document.getElementById('resultPayout').textContent=finalPayout.toLocaleString();
+
+  mainApp.classList.add('hidden');
+  betResultPage.classList.remove('hidden');
+
+  selectedFighterEl.textContent='없음';
+  selectedOddsEl.textContent='-';
+  selectedRoundEl.textContent='-';
+  betAmountEl.value='';
+  payoutEl.textContent='0';
+  betAccountEl.value='';
+});
+
+backToMain.addEventListener('click', ()=>{
+  betResultPage.classList.add('hidden');
+  mainApp.classList.remove('hidden');
+});
+
+// 관리자 페이지
+function showAdminPage(){
+  document.body.innerHTML=`
+    <header class="w-full bg-gray-800 p-4 text-center text-white font-bold">BLOODLINE</header>
+    <div class="p-4 bg-gray-900 text-white min-h-screen">
+      <h1 class="text-2xl font-bold mb-4">관리자 페이지</h1>
+      <div class="mb-4 flex gap-2">
+        <button id="deleteOld" class="px-4 py-2 bg-red-600 rounded-xl">20개 남기고 삭제</button>
+      </div>
+      <table class="w-full border border-gray-700">
+        <thead><tr class="bg-gray-800">
+          <th class="p-2">사용자</th><th class="p-2">고유번호</th><th class="p-2">계좌</th>
+          <th class="p-2">선수</th><th class="p-2">배당률</th><th class="p-2">라운드</th>
+          <th class="p-2">베팅 금액</th><th class="p-2">지급 금액</th><th class="p-2">수수료</th>
+        </tr></thead>
+        <tbody id="bettingLog"></tbody>
+      </table>
+    </div>`;
+  const tbody=document.getElementById('bettingLog');
+  onSnapshot(collection(db,"bets"), snap=>{
+    tbody.innerHTML='';
+    snap.forEach(docSnap=>{
+      const bet=docSnap.data();
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td class="border p-2">${bet.user.name}</td>
+        <td class="border p-2">${bet.user.id}</td>
+        <td class="border p-2">${bet.user.account}</td>
+        <td class="border p-2">${bet.fighter}</td>
+        <td class="border p-2">${bet.odds}</td>
+        <td class="border p-2">${bet.round}</td>
+        <td class="border p-2">${bet.amount.toLocaleString()}</td>
+        <td class="border p-2">${bet.payout.toLocaleString()}</td>
+        <td class="border p-2">${bet.fee.toLocaleString()}</td>`;
+      tbody.appendChild(tr);
     });
   });
 
-  function calculatePayout(){
-    const amount=parseFloat(betAmountEl.value||0);
-    const odds=parseFloat(selectedOddsEl.textContent||0);
-    payoutEl.textContent=(!isNaN(amount)&&amount>0&&!isNaN(odds)&&odds>0)?(amount*odds).toLocaleString():'0';
-  }
-
-  // 배팅 실행
-  placeBet.addEventListener('click', async ()=>{
-    const saved=localStorage.getItem('ufo_demo_user');
-    if(!saved){ alert('먼저 로그인하세요.'); return; }
-    const user=JSON.parse(saved);
-    const account=betAccountEl.value.trim();
-    if(!account){ alert('계좌번호를 입력하세요.'); return; }
-    const fighter=selectedFighterEl.textContent;
-    const amount=parseFloat(betAmountEl.value||0);
-    const odds=parseFloat(selectedOddsEl.textContent||0);
-    const round=parseInt(roundSelect.value);
-    if(!fighter||fighter==='없음'||amount<=0||odds<=0){ alert('선수 선택 및 금액 확인'); return; }
-    if(amount>MAX_BET){ alert('최대 배팅 금액은 10억입니다.'); return; }
-
-    const rawPayout=amount*odds;
-    const fee=Math.floor(rawPayout*0.2);
-    const finalPayout=rawPayout-fee;
-
-    await addDoc(collection(db,"bets"),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
-    await setDoc(doc(db,"placeBet",user.id),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
-
-    document.getElementById('resultFighter').textContent=fighter;
-    document.getElementById('resultRound').textContent=round;
-    document.getElementById('resultBetAmount').textContent=amount.toLocaleString();
-    document.getElementById('resultOdds').textContent=odds.toFixed(2);
-    document.getElementById('resultFee').textContent=fee.toLocaleString();
-    document.getElementById('resultPayout').textContent=finalPayout.toLocaleString();
-
-    mainApp.classList.add('hidden');
-    betResultPage.classList.remove('hidden');
-
-    selectedFighterEl.textContent='없음';
-    selectedOddsEl.textContent='-';
-    selectedRoundEl.textContent='-';
-    betAmountEl.value='';
-    payoutEl.textContent='0';
-    betAccountEl.value='';
-  });
-
-  backToMain.addEventListener('click', ()=>{
-    betResultPage.classList.add('hidden');
-    mainApp.classList.remove('hidden');
-  });
-
-  // 관리자 페이지
-  function showAdminPage(){
-    document.body.innerHTML=`
-      <header class="w-full bg-gray-800 p-4 text-center text-white font-bold">BLOODLINE</header>
-      <div class="p-4 bg-gray-900 text-white min-h-screen">
-        <h1 class="text-2xl font-bold mb-4">관리자 페이지</h1>
-        <div class="mb-4 flex gap-2">
-          <button id="deleteOld" class="px-4 py-2 bg-red-600 rounded-xl">20개 남기고 삭제</button>
-        </div>
-        <table class="w-full border border-gray-700">
-          <thead><tr class="bg-gray-800">
-            <th class="p-2">사용자</th><th class="p-2">고유번호</th><th class="p-2">계좌</th>
-            <th class="p-2">선수</th><th class="p-2">배당률</th><th class="p-2">라운드</th>
-            <th class="p-2">베팅 금액</th><th class="p-2">지급 금액</th><th class="p-2">수수료</th>
-          </tr></thead>
-          <tbody id="bettingLog"></tbody>
-        </table>
-      </div>`;
-    const tbody=document.getElementById('bettingLog');
-    onSnapshot(collection(db,"bets"), snap=>{
-      tbody.innerHTML='';
-      snap.forEach(docSnap=>{
-        const bet=docSnap.data();
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td class="border p-2">${bet.user.name}</td>
-          <td class="border p-2">${bet.user.id}</td>
-          <td class="border p-2">${bet.user.account}</td>
-          <td class="border p-2">${bet.fighter}</td>
-          <td class="border p-2">${bet.odds}</td>
-          <td class="border p-2">${bet.round}</td>
-          <td class="border p-2">${bet.amount.toLocaleString()}</td>
-          <td class="border p-2">${bet.payout.toLocaleString()}</td>
-          <td class="border p-2">${bet.fee.toLocaleString()}</td>`;
-        tbody.appendChild(tr);
-      });
+  document.getElementById('deleteOld').addEventListener('click', async ()=>{
+    if(!confirm("정말 최근 20개만 남기고 모두 삭제하시겠습니까?")) return;
+    const q=query(collection(db,"bets"), orderBy("time","desc"), limit(20));
+    const keepSnap=await getDocs(q);
+    const keepIds=keepSnap.docs.map(d=>d.id);
+    const allSnap=await getDocs(collection(db,"bets"));
+    allSnap.forEach(async d=>{
+      if(!keepIds.includes(d.id)) await deleteDoc(doc(db,"bets",d.id));
     });
+    alert("최근 20개만 남기고 삭제 완료");
+  });
+}
 
-    document.getElementById('deleteOld').addEventListener('click', async ()=>{
-      if(!confirm("정말 최근 20개만 남기고 모두 삭제하시겠습니까?")) return;
-      const q=query(collection(db,"bets"), orderBy("time","desc"), limit(20));
-      const keepSnap=await getDocs(q);
-      const keepIds=keepSnap.docs.map(d=>d.id);
-      const allSnap=await getDocs(collection(db,"bets"));
-      allSnap.forEach(async d=>{
-        if(!keepIds.includes(d.id)) await deleteDoc(doc(db,"bets",d.id));
-      });
-      alert("최근 20개만 남기고 삭제 완료");
-    });
+// 자동 로그인 처리
+(function(){
+  const saved=localStorage.getItem('ufo_demo_user');
+  if(saved){
+    loginPage.classList.add('hidden');
+    const ageConfirmed=localStorage.getItem('ufo_demo_age_confirmed');
+    if(ageConfirmed){ mainApp.classList.remove('hidden'); } 
+    else { ageModal.classList.remove('hidden'); }
   }
-
-  (function(){
-    const saved=localStorage.getItem('ufo_demo_user');
-    if(saved){
-      loginPage.classList.add('hidden');
-      const ageConfirmed=localStorage.getItem('ufo_demo_age_confirmed');
-      if(ageConfirmed){ mainApp.classList.remove('hidden'); } 
-      else { ageModal.classList.remove('hidden'); }
-    }
-  })();
+})();
 </script>
 </body>
 </html>
-
