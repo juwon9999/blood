@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UFC Toto Demo — 관리자 + 실시간 로그</title>
+  <title>UFC Toto Demo</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col">
 
-  <header class="w-full bg-gray-800 p-4 text-center text-white font-bold cursor-pointer" id="headerTitle">UFC</header>
-
   <!-- 로그인 -->
-  <div id="loginPage" class="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+  <div id="loginPage" class="flex items-center justify-center min-h-screen">
     <form id="loginForm" class="bg-gray-800 p-6 rounded-lg shadow-lg">
       <h2 class="text-xl font-bold mb-4 text-center">로그인</h2>
       <input type="text" id="username" placeholder="이름" class="w-full p-2 mb-2 text-black rounded">
@@ -21,16 +19,58 @@
     </form>
   </div>
 
-  <!-- 나머지 UI (ageModal, mainApp, betResultPage) 기존 코드 동일... -->
+  <!-- 메인 배팅 화면 -->
+  <main id="mainApp" class="flex-1 p-6 grid place-items-center hidden">
+    <div class="bg-gray-800 rounded-2xl shadow-lg p-6 w-full max-w-md">
+      <h2 class="text-xl font-semibold mb-4 text-center">다가오는 경기</h2>
+      <p class="text-center mb-6">선수 A vs 선수 B</p>
 
-  <!-- Firebase + 앱 로직 -->
+      <div class="flex justify-around mb-4">
+        <div class="text-center">
+          <p class="font-bold">선수 A</p>
+          <p class="text-green-400 text-lg">배당률: <span id="oddsA">2.20</span></p>
+          <button id="btnBetA" class="mt-2 px-4 py-2 bg-red-600 rounded-xl hover:bg-red-500">A에게 배팅</button>
+        </div>
+        <div class="text-center">
+          <p class="font-bold">선수 B</p>
+          <p class="text-green-400 text-lg">배당률: <span id="oddsB">1.90</span></p>
+          <button id="btnBetB" class="mt-2 px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-500">B에게 배팅</button>
+        </div>
+      </div>
+
+      <label class="block mb-2">계좌번호</label>
+      <input id="betAccount" type="text" class="w-full p-2 rounded-lg text-black mb-2">
+
+      <label class="block mb-2">베팅 금액</label>
+      <input id="betAmount" type="number" class="w-full p-2 rounded-lg text-black mb-2" />
+
+      <div class="bg-gray-700 p-4 rounded-lg mb-4">
+        <p>선택한 선수: <span id="selectedFighter">없음</span></p>
+        <p>배당률: <span id="selectedOdds">-</span></p>
+        <p class="mt-2 font-semibold">예상 당첨금: <span id="payout">0</span> 원</p>
+      </div>
+
+      <button id="placeBet" class="w-full px-4 py-2 bg-emerald-500 rounded-xl font-bold">모의 배팅</button>
+    </div>
+  </main>
+
+  <!-- 결과 페이지 -->
+  <main id="betResultPage" class="flex-1 p-6 grid place-items-center hidden">
+    <div class="bg-gray-800 rounded-2xl shadow-lg p-6 w-full max-w-md text-center">
+      <h2 class="text-xl font-semibold mb-4">배팅 결과</h2>
+      <p>선택한 선수: <span id="resultFighter"></span></p>
+      <p>배팅 금액: <span id="resultBetAmount"></span> 원</p>
+      <p>배당률: <span id="resultOdds"></span></p>
+      <p>예상 수령금: <span id="resultPayout"></span> 원</p>
+      <button id="backToMain" class="mt-4 px-4 py-2 bg-blue-600 rounded-xl">메인으로</button>
+    </div>
+  </main>
+
+  <!-- Firebase + 로직 -->
   <script type="module">
-    // Firebase SDK 불러오기
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, getDocs, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    // Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyADD5SDGP3qgD1w92EsVJzRQL6jL2-4Hhs",
       authDomain: "bloodlien-f24bc.firebaseapp.com",
@@ -40,103 +80,80 @@
       appId: "1:521684113454:web:471349dc2374e4903127bf",
       measurementId: "G-S0KDBLK5DN"
     };
-
-    // Firebase 초기화
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
     const db = getFirestore(app);
 
-    // 기존 DOM 변수들 가져오기
-    const loginPage = document.getElementById('loginPage');
-    const loginForm = document.getElementById('loginForm');
-    const loginError = document.getElementById('loginError');
-    const mainApp = document.getElementById('mainApp');
-    const betResultPage = document.getElementById('betResultPage');
-    const placeBet = document.getElementById('placeBet');
-    const betAccountEl = document.getElementById('betAccount');
-    const selectedFighterEl = document.getElementById('selectedFighter');
-    const selectedOddsEl = document.getElementById('selectedOdds');
-    const roundSelect = document.getElementById('roundSelect');
-    const betAmountEl = document.getElementById('betAmount');
+    const loginPage=document.getElementById('loginPage');
+    const mainApp=document.getElementById('mainApp');
+    const betResultPage=document.getElementById('betResultPage');
+    const loginForm=document.getElementById('loginForm');
+    const loginError=document.getElementById('loginError');
+    const btnBetA=document.getElementById('btnBetA');
+    const btnBetB=document.getElementById('btnBetB');
+    const selectedFighterEl=document.getElementById('selectedFighter');
+    const selectedOddsEl=document.getElementById('selectedOdds');
+    const betAmountEl=document.getElementById('betAmount');
+    const betAccountEl=document.getElementById('betAccount');
+    const payoutEl=document.getElementById('payout');
+    const placeBet=document.getElementById('placeBet');
+
+    let selectedFighter="", selectedOdds=0;
 
     // 로그인
     loginForm.addEventListener('submit', e=>{
       e.preventDefault();
-      const name = document.getElementById('username').value.trim();
-      const id = document.getElementById('userid').value.trim();
-
+      const name=document.getElementById('username').value.trim();
+      const id=document.getElementById('userid').value.trim();
       if(name && id){
         localStorage.setItem('ufo_demo_user', JSON.stringify({name,id}));
         loginPage.classList.add('hidden');
         mainApp.classList.remove('hidden');
       } else {
-        loginError.textContent = '이름, 고유번호를 모두 입력하세요.';
+        loginError.textContent="이름과 고유번호 입력하세요";
         loginError.classList.remove('hidden');
       }
     });
 
-    // 배팅 저장 Firestore
+    // 선수 선택
+    btnBetA.addEventListener('click', ()=>{selectedFighter="선수 A";selectedOdds=2.2;updateUI();});
+    btnBetB.addEventListener('click', ()=>{selectedFighter="선수 B";selectedOdds=1.9;updateUI();});
+    function updateUI(){
+      selectedFighterEl.textContent=selectedFighter;
+      selectedOddsEl.textContent=selectedOdds.toFixed(2);
+      const amount=parseFloat(betAmountEl.value||0);
+      payoutEl.textContent=(amount*selectedOdds).toLocaleString();
+    }
+
+    // 배팅
     placeBet.addEventListener('click', async ()=>{
-      const saved = localStorage.getItem('ufo_demo_user');
-      if(!saved){ alert('먼저 로그인하세요.'); return; }
-      const user = JSON.parse(saved);
+      const user=JSON.parse(localStorage.getItem('ufo_demo_user'));
+      const account=betAccountEl.value.trim();
+      const amount=parseFloat(betAmountEl.value||0);
+      if(!user||!account||!selectedFighter||amount<=0){alert("정보 입력 확인");return;}
+      const payout=Math.floor(amount*selectedOdds*0.8);
 
-      const account = betAccountEl.value.trim();
-      if(!account){ alert('계좌번호를 입력하세요.'); return; }
-
-      const fighter = selectedFighterEl.textContent;
-      const amount = parseFloat(betAmountEl.value||0);
-      const odds = parseFloat(selectedOddsEl.textContent||0);
-      const round = parseInt(roundSelect.value);
-
-      if(!fighter || fighter==='없음' || amount<=0 || odds<=0){
-        alert('선수 선택 및 금액 확인'); return;
-      }
-
-      const rawPayout = amount*odds;
-      const fee = Math.floor(rawPayout*0.2);
-      const finalPayout = rawPayout - fee;
-
-      // Firestore 저장
-      await addDoc(collection(db, "bets"), {
-        user:{...user, account},
-        fighter,
-        round,
+      await addDoc(collection(db,"bets"),{
+        user:{...user,account},
+        fighter:selectedFighter,
+        odds:selectedOdds,
         amount,
-        odds,
-        payout: finalPayout,
-        fee,
+        payout,
         time:new Date().toISOString()
       });
 
-      alert("배팅 완료 (Firestore 저장됨)");
+      document.getElementById('resultFighter').textContent=selectedFighter;
+      document.getElementById('resultOdds').textContent=selectedOdds;
+      document.getElementById('resultBetAmount').textContent=amount.toLocaleString();
+      document.getElementById('resultPayout').textContent=payout.toLocaleString();
+
+      mainApp.classList.add('hidden');
+      betResultPage.classList.remove('hidden');
     });
 
-    // 관리자 페이지용 로그 렌더링
-    async function renderAdminTable(){
-      const tbody = document.getElementById('bettingLog');
-      if(!tbody) return;
-      tbody.innerHTML = '';
-      const snapshot = await getDocs(collection(db, "bets"));
-      snapshot.forEach(docSnap=>{
-        const bet = docSnap.data();
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-          <td class="border p-2">${bet.user.name}</td>
-          <td class="border p-2">${bet.user.id}</td>
-          <td class="border p-2">${bet.user.account}</td>
-          <td class="border p-2">${bet.fighter}</td>
-          <td class="border p-2">${bet.odds}</td>
-          <td class="border p-2">${bet.round}</td>
-          <td class="border p-2">${bet.amount.toLocaleString()}</td>
-          <td class="border p-2">${bet.payout.toLocaleString()}</td>
-          <td class="border p-2">${bet.fee.toLocaleString()}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // 실시간 반영
-    onSnapshot(collection(db, "bets"), ()=>renderAdminTable());
+    document.getElementById('backToMain').addEventListener('click',()=>{
+      betResultPage.classList.add('hidden');
+      mainApp.classList.remove('hidden');
+    });
   </script>
 </body>
 </html>
