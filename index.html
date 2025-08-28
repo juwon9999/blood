@@ -295,8 +295,9 @@ function showAdminPage(){
   onSnapshot(collection(db,"bets"), snap=>{
     tbody.innerHTML='';
     snap.forEach(docSnap=>{
-      const bet=docSnap.data();
-      const tr=document.createElement('tr');
+      const date = new Date(bet.time);
+const formatted = date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+
       tr.innerHTML=`
         <td class="border p-2">${bet.user.name}</td>
         <td class="border p-2">${bet.user.id}</td>
@@ -337,4 +338,5 @@ function showAdminPage(){
 </script>
 </body>
 </html>
+
 
