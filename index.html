@@ -37,18 +37,18 @@
 <main id="mainApp" class="flex-1 p-6 grid place-items-center hidden">
   <div class="bg-gray-800 rounded-2xl shadow-lg p-6 w-full max-w-md">
     <h2 class="text-xl font-semibold mb-4 text-center">다가오는 경기</h2>
-    <p class="text-center mb-6">정부장 vs 대꾸</p>
+    <p class="text-center mb-6">대꾸 vs 정부장</p>
 
     <div class="flex justify-around mb-4">
       <div class="text-center">
         <img src="https://picsum.photos/100/100?random=1" class="mx-auto mb-2 rounded-full">
-        <p class="font-bold">정부정</p>
+        <p class="font-bold">대꾸</p>
         <p class="text-green-400 text-lg">배당률: <span id="oddsA">2.20</span></p>
         <button id="btnBetA" class="mt-2 px-4 py-2 bg-red-600 rounded-xl hover:bg-red-500">A에게 배팅</button>
       </div>
       <div class="text-center">
         <img src="https://picsum.photos/100/100?random=2" class="mx-auto mb-2 rounded-full">
-        <p class="font-bold">대꾸</p>
+        <p class="font-bold">정부장</p>
         <p class="text-green-400 text-lg">배당률: <span id="oddsB">1.90</span></p>
         <button id="btnBetB" class="mt-2 px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-500">B에게 배팅</button>
       </div>
@@ -148,8 +148,8 @@ const matchTitle = document.querySelector('main h2 + p');
 
 // 라운드별 선수
 const fightersByRound = {
-  1: { A: { name: "정부장", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
-       B: { name: "대꾸", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  1: { A: { name: "대꾸", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "정부장", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
 
 };
 
@@ -295,9 +295,8 @@ function showAdminPage(){
   onSnapshot(collection(db,"bets"), snap=>{
     tbody.innerHTML='';
     snap.forEach(docSnap=>{
-      const date = new Date(bet.time);
-const formatted = date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
-
+      const bet=docSnap.data();
+      const tr=document.createElement('tr');
       tr.innerHTML=`
         <td class="border p-2">${bet.user.name}</td>
         <td class="border p-2">${bet.user.id}</td>
@@ -338,5 +337,3 @@ const formatted = date.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 </script>
 </body>
 </html>
-
-
