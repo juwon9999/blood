@@ -62,7 +62,10 @@
       <label class="block mb-2">라운드 선택:</label>
       <select id="roundSelect" class="w-full p-2 rounded-lg text-black mb-2">
         <option value="1">라운드 1</option>
-        
+        <option value="2">라운드 2</option>
+        <option value="3">라운드 3</option>
+        <option value="4">라운드 4</option>
+        <option value="5">라운드 5</option>
       </select>
       <label class="block mb-2">베팅 금액 (₩):</label>
       <input id="betAmount" type="number" class="w-full p-2 rounded-lg text-black mb-2" placeholder="금액 입력" />
@@ -117,7 +120,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const MAX_BET=100000000;
+const MAX_BET=1000000000;
 
 // DOM
 const loginPage=document.getElementById('loginPage');
@@ -148,8 +151,18 @@ const matchTitle = document.querySelector('main h2 + p');
 
 // 라운드별 선수
 const fightersByRound = {
-  1: { A: { name: "대꾸", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
-       B: { name: "정부장", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  1: { A: { name: "A", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "B", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  2: { A: { name: "A", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "B", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  3: { A: { name: "A", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "B", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },
+  4: { A: { name: "A", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "B", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },    
+  5: { A: { name: "A", odds: 2.20, img: "https://picsum.photos/100/100?random=1" },
+       B: { name: "B", odds: 1.95, img: "https://picsum.photos/100/100?random=2" } },      
+       
+     
 
 };
 
