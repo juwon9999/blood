@@ -104,7 +104,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, deleteDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, setDoc, doc, onSnapshot, deleteDoc, getDocs, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyADD5SDGP3qgD1w92EsVJzRQL6jL2-4Hhs",
@@ -253,9 +253,9 @@ function updateOdds() {
     });
 
     const total = totalA + totalB;
-    const base = 1000000; // 기본 보정값
-    const oddsAVal = (total + base) / (totalA + base);
-    const oddsBVal = (total + base) / (totalB + base);
+    const base = 450000000; // 기본 보정값
+    const oddsAVal = Math.min(Math.max((total + base) / (totalA + base), 1.10), 3.00);
+    const oddsBVal = Math.min(Math.max((total + base) / (totalB + base), 1.10), 3.00);
 
     oddsA.textContent = oddsAVal.toFixed(2);
     oddsB.textContent = oddsBVal.toFixed(2);
@@ -307,7 +307,7 @@ placeBet.addEventListener('click', async ()=>{
   const rawPayout=amount*odds;
   const fee=Math.floor(rawPayout*0.2);
   const finalPayout=rawPayout-fee;
-
+  
   await addDoc(collection(db,"bets"),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
   await setDoc(doc(db,"placeBet",user.id),{user:{...user,account},fighter,round,amount,odds,payout:finalPayout,fee,time:new Date().toISOString()});
 
@@ -327,6 +327,8 @@ placeBet.addEventListener('click', async ()=>{
   betAmountEl.value='';
   payoutEl.textContent='0';
   betAccountEl.value='';
+
+  
 });
 
 backToMain.addEventListener('click', ()=>{
@@ -428,4 +430,3 @@ function showAdminPage(){
 </script>
 </body>
 </html>
-
