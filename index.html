@@ -243,39 +243,6 @@ roundSelect.addEventListener('change', ()=>{
   payoutEl.textContent = "0";
 });
 
-// ⭐ 실시간 배당률 계산
-function updateOdds() {
-  onSnapshot(collection(db, "bets"), snap => {
-    let totalA = 0, totalB = 0;
-    snap.forEach(docSnap => {
-      const bet = docSnap.data();
-      if(bet.fighter === fightersByRound[roundSelect.value].A.name){
-        totalA += bet.amount;
-      } else if(bet.fighter === fightersByRound[roundSelect.value].B.name){
-        totalB += bet.amount;
-      }
-    });
-
-    const total = totalA + totalB;
-    const base = 450000000; // 기본 보정값
-    const oddsAVal = Math.min(Math.max((total + base) / (totalA + base), 1.10), 3.00);
-    const oddsBVal = Math.min(Math.max((total + base) / (totalB + base), 1.10), 3.00);
-
-    oddsA.textContent = oddsAVal.toFixed(2);
-    oddsB.textContent = oddsBVal.toFixed(2);
-
-    // 선택한 배당률도 갱신
-    if(selectedFighterEl.textContent === fightersByRound[roundSelect.value].A.name){
-      selectedOddsEl.textContent = oddsAVal.toFixed(2);
-      calculatePayout();
-    }
-    if(selectedFighterEl.textContent === fightersByRound[roundSelect.value].B.name){
-      selectedOddsEl.textContent = oddsBVal.toFixed(2);
-      calculatePayout();
-    }
-  });
-}
-updateOdds(); // 실행
 
 // 라운드 변경 시 선수 갱신
 roundSelect.addEventListener('change', ()=>{
@@ -445,3 +412,4 @@ function showAdminPage(){
 </script>
 </body>
 </html>
+
